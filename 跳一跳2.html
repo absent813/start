@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>跳一跳小游戏</title>
+    <style>
+        canvas { border: 2px solid #333; background: #87CEEB; }
+        body { text-align: center; font-family: Arial; }
+    </style>
+</head>
+<body>
+    <h1>跳一跳小游戏</h1>
+    <p>点击屏幕蓄力，松开跳跃</p>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <p id="score">得分: 0</p>
+    
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 游戏变量
+        let score = 0;
+        let player = { x: 400, y: 500, size: 30, vy: 0, vx: 0 };
+        let platform = { x: 300, y: 450, width: 80 };
+        let isCharging = false;
+        let chargePower = 0;
+        let targetX = platform.x + platform.width / 2; // 目标位置（平台中心）
+        
+        function draw() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制地面
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, 550, canvas.width, 50);
+            
+            // 绘制平台
+            ctx.fillStyle = '#D2691E';
+            ctx.fillRect(platform.x, platform.y, platform.width, 20);
+            
+            // 绘制玩家
+            ctx.fillStyle = '#FF0000';
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.size/2, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 显示分数
+            document.getElementById('score').textContent = '得分: ' + score;
+            
+            // 显示蓄力条
+            if (isCharging) {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(350, 30, chargePower * 50, 20);
+            }
+        }
+        
+        function update() {
+            // 应用重力
+            player.vy += 0.5;
+            player.y += player.vy;
+            player.x += player.vx;
+            
+            // 边界检查
+            if (player.y > 520) {
+                player.y = 520;
+                player.vy = 0;
+                player.vx = 0;
+            }
+            
+            // 左右边界
+            if (player.x < 0) player.x = 0;
+            if (player.x > canvas.width) player.x = canvas.width;
+            
+            // 平台碰撞检测
+            if (player.x > platform.x && 
+                player.x < platform.x + platform.width &&
+                player.y > platform.y - 15 && 
+                player.y < platform.y + 15 &&
+                player.vy > 0) {
+                
+                player.y = platform.y - 15;
+                player.vy = 0;
+                player.vx = 0;
+                score += 10;
+                
+                // 生成新平台
+                platform.x = Math.random() * 700;
+                platform.y = Math.random() * 300 + 200;
+                targetX = platform.x + platform.width / 2;
+            }
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        canvas.addEventListener('mousedown', () => {
+            isCharging = true;
+            chargePower = 0;
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            if (isCharging) {
+                // 计算跳跃方向（从玩家当前位置到目标平台中心）
+                const dx = targetX - player.x;
+                const dy = platform.y - player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const power = chargePower * 10;
+                
+                // 设置速度（水平和垂直）
+                player.vx = (dx / distance) * power * 0.8;
+                player.vy = -power; // 向上的速度
+                
+                isCharging = false;
+            }
+        });
+        
+        // 蓄力更新
+        setInterval(() => {
+            if (isCharging && chargePower < 2) {
+                chargePower += 0.1;
+            }
+        }, 100);
+        
+        // 开始游戏循环
+        gameLoop();
+    </script>
+    
+    <p><strong>操作说明：</strong>点击屏幕蓄力，松开跳跃</p>
+    <p>将整个网页保存后发送给朋友，用浏览器打开即可玩！</p>
+</body>
+</html>
